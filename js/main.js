@@ -26,7 +26,6 @@ let closeModal = function (e) {
 
 buttonCart.addEventListener("click", openModal);
 modalCart.addEventListener("click", closeModal);
-// modalCloseBody.addEventListener("click", closeModal);
 
 //scroll smoth
 const scrollLinks = document.querySelectorAll("a.scroll-link");
