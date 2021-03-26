@@ -31,6 +31,11 @@ const getGoots = async () => {
 
 const cart = {
   cartGoods: [],
+  countQuantity() {
+    cartCount.textContent = this.cartGoods.reduce((sum, item) => {
+      return sum + item.count;
+    }, 0);
+  },
   renderCart() {
     cartTableGoods.textContent = "";
     this.cartGoods.forEach(({ id, name, price, count }) => {
@@ -54,6 +59,7 @@ const cart = {
   deleteGood(id) {
     this.cartGoods = this.cartGoods.filter((item) => id !== item.id);
     this.renderCart();
+    this.countQuantity();
   },
   minusGood(id) {
     for (const item of this.cartGoods) {
@@ -67,6 +73,7 @@ const cart = {
       }
     }
     this.renderCart();
+    this.countQuantity();
   },
   plusGood(id) {
     for (const item of this.cartGoods) {
@@ -76,6 +83,7 @@ const cart = {
       }
     }
     this.renderCart();
+    this.countQuantity();
   },
   addCartGoods(id) {
     const goodItem = this.cartGoods.find((item) => item.id === id);
@@ -91,12 +99,14 @@ const cart = {
             price,
             count: 1,
           });
+          this.countQuantity();
         });
     }
   },
   clearCartGoods() {
-    this.cartGoods = [];
+    this.cartGoods.length = 0;
     this.renderCart();
+    this.countQuantity();
   },
 };
 
@@ -106,7 +116,6 @@ document.body.addEventListener("click", (e) => {
   const addToCart = e.target.closest(".add-to-cart");
   if (addToCart) {
     cart.addCartGoods(addToCart.dataset.id);
-    cartCountGoods();
   }
 });
 
@@ -132,15 +141,18 @@ const openModal = () => {
   modalCart.classList.toggle("show");
 };
 
-let closeModal = (e) => {
-  if (e.target.id != "modal-cart" && e.target.className != "modal-close")
-    return;
-
+let closeModal = () => {
   modalCart.classList.remove("show");
 };
 
 buttonCart.addEventListener("click", openModal);
-modalCart.addEventListener("click", closeModal);
+modalClose.addEventListener("click", closeModal);
+
+modalCart.addEventListener("click", (e) => {
+  if (e.target.classList.contains("overlay")) {
+    closeModal();
+  }
+});
 
 //scroll smoth
 const scrollLinks = document.querySelectorAll("a.scroll-link");
@@ -223,4 +235,41 @@ buttomBanner.forEach(function (buttom) {
   });
 });
 
-// cart-coutt
+const modalForm = document.querySelector(".modal-form");
+const buttonForm = document.querySelector(".cart-buy");
+const modalInput = document.querySelectorAll(".modal-input");
+const postData = (dataUser) =>
+  fetch("server.php", {
+    method: "POST",
+    body: dataUser,
+  });
+
+buttonForm.addEventListener("click", (e) => {
+  e.preventDefault();
+  let count = 0;
+  modalInput.forEach((input) => {
+    if (input.value.length === 0 || input.value.match(/^[ ]+$/)) {
+      count++;
+    }
+  });
+  if (cart.cartGoods.length === 0 || count > 0) {
+    alert("ваша карзина пуста или данные пусты");
+    return;
+  }
+  const formData = new FormData(modalForm);
+  formData.append("cart", JSON.stringify(cart.cartGoods));
+
+  postData(formData)
+    .then((response) => {
+      if (!response.ok) throw new Error(response.status);
+      alert("все супер");
+    })
+    .catch((err) => {
+      alert("ошибка");
+    })
+    .finally(() => {
+      closeModal();
+      modalForm.reset();
+      cart.clearCartGoods();
+    });
+});
